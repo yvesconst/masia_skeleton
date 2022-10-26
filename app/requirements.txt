@@ -1,0 +1,8 @@
+django
+psycopg2
+djangorestframework
+drf-nested-routers
+django-debug-toolbar
+django-flower
+django-atlassian
+sonar-client
