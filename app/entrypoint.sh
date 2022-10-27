@@ -1,3 +1,5 @@
+#!/bin/bash
+
 echo "Waiting for postgres start ..."
 while ! nc -z $DB_HOST $DB_PORT; do
     sleep 0.1

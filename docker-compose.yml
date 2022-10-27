@@ -5,13 +5,14 @@ services:
     build: .
     command: python manage.py runserver 0.0.0.0:8000
     volumes:
-      - .:/code
+      - ./app:/usr/src/app
     ports:
-      - "8000:8082"
+      - "8082:8000"
     env_file: .env
     depends_on:
-      - db
       - postgresql
+    networks:
+      - jiranet
 
   jira:
     depends_on:
@@ -22,10 +23,10 @@ services:
     volumes:
       - jiradata:/var/atlassian/jira
     ports:
-      - '80:8081'
+      - '8083:8080'
     environment:
       - 'JIRA_DATABASE_URL=postgresql://jira@postgresql/jiradb'
-      - 'JIRA_DB_PASSWORD=jellyfish'
+      - 'JIRA_DB_PASSWORD=jira'
       - 'SETENV_JVM_MINIMUM_MEMORY=2048m'
       - 'SETENV_JVM_MAXIMUM_MEMORY=4096m'
       - 'JIRA_PROXY_NAME='
@@ -39,7 +40,7 @@ services:
         max-file: "50"
 
   postgresql:
-    image: postgres:9.5-alpine
+    image: postgres:15.0-alpine3.16
     networks:
       - jiranet
     volumes:
@@ -56,12 +57,48 @@ services:
       options:
         max-size: "500k"
         max-file: "50"
+  
+  pgadmin:
+    image: dpage/pgadmin4
+    env_file: .env
+    volumes:
+       - pgadmin:/var/lib/pgadmin
+
+    ports:
+      - 5050:80
+    networks:
+      - jiranet
+    restart: unless-stopped
+  
+  sonarqube:
+    image: library/sonarqube:latest
+    ports:
+      - "9000:9000"
+    volumes:
+      # - "conf:/opt/sonarqube/conf"
+      - "extensions:/opt/sonarqube/extensions"
+      - "logs_sonar:/opt/sonarqube/logs"
+      - "data_sonar:/opt/sonarqube/data"
+    depends_on:
+      - postgresql
+    networks:
+      - jiranet
+    environment:
+      - sonar.jdbc.username=jira
+      - sonar.jdbc.password=jira
+      - sonar.jdbc.url=jdbc:postgresql://postgresql/sonarqube
+
 
 volumes:
   jiradata:
     external: false
   postgresqldata:
     external: false
+  pgadmin:
+  extensions:
+  logs_sonar:
+  data_sonar:
+  
 
 networks:
   jiranet:
